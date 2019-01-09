@@ -1,0 +1,313 @@
+<html>
+<head>
+  <meta charset="utf-8">
+    <title>A D3 map</title>
+    <script src="http://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+    <!--script src="http://yourjavascript.com/8474152722/testing.js"></script-->
+    <script src="https://d3js.org/d3-array.v1.min.js"></script>
+    <script src="https://d3js.org/d3-geo.v1.min.js"></script>
+    <script src="https://d3js.org/d3-queue.v3.min.js"></script>
+    <script src="https://d3js.org/topojson.v2.min.js"></script>
+    <script src="https://d3js.org/d3-scale.v1.min.js"></script>
+
+      <style>
+    html, body {
+   height: 100%; 
+
+  }
+
+  li {margin-top:5px;}
+
+  #infobox{padding:10px;position:absolute;width:300px;height:420px;background:rgba(255,255,255,1);-ms-filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#B2000000,endColorstr=#B2000000);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#B2000000,endColorstr=#B2000000);zoom:1;font-family:"Fontin Sans","Lucida Grande","Arial","Helvetica","Verdana","Gill Sans",sans-serif;font-size:0.990em;color:#000;right:64px;font-size:.8em;top:45px;overflow:visible;-webkit-border-radius:5px;-moz-border-radius:5px;border-radius:5px;box-shadow:2px 2px 5px #000;-moz-box-shadow:2px 2px 5px #000;-webkit-box-shadow:2px 2px 5px #000;}
+  .legend {
+        text-align: left;
+        line-height: 18px;
+        color: #555;
+      }
+      .legend i {
+        width: 18px;
+        height: 18px;
+        float: left;
+        margin-right: 8px;
+        opacity: 0.7;
+      }
+  #map {
+     width: 100% !important; height: 100% !important;
+  }
+  line{
+    shape-rendering: crispEdges;
+  }
+  rect{
+    shape-rendering: crispEdges;
+  }
+  path {
+    fill: red;
+    fill-opacity: 1;
+    stroke: #000;
+    stroke-opacity: 1;
+    stroke-width: 1px;
+  }
+
+  .rule{
+  color: black;
+  font-family: 'Ubuntu',Tahoma,sans-serif;
+  }
+  path:hover {
+    fill: white;
+    fill-opacity: 1;
+    stroke: #fff;
+    stroke-opacity: 1;
+    stroke-width: 3px;
+  }
+
+  </style>
+  <div id="infobox">
+  <h1 style="font-size: 14px;font-family: Verdana;">Crime Density of Minneapolis 2011-2016</h1>
+  <div>
+    <label for="select">Crime to Display on Map:</label>
+    <select>
+      <option value="ROB">Robbery</option>
+      <option value="VTH">Vehicle Theft</option>
+      <option value="BUR">Burglary</option>
+</select>
+</div>
+  <p id="caption"></p>
+  <p id="caption2"></p>
+  <div class="chart"></div>
+<hr/>
+<p>Map Legend <!-- (<a href='http://blog.diegovalle.net/2013/02/mexican-presidential-election-by.html'>blog post</a>) -->:</p>
+<div class="legend">
+<i id="n0" style="background-color: rgb(255, 245, 240); background-position: initial initial; background-repeat: initial initial;"></i> <span id="t0">(0, 10]</span><br>
+<i id="n1" style="background-color: rgb(254, 224, 210); background-position: initial initial; background-repeat: initial initial;"></i> <span id="t1">(10, 50]</span><br>
+<i id="n2" style="background-color: rgb(252, 187, 161); background-position: initial initial; background-repeat: initial initial;"></i> <span id="t2">(50, 100]</span><br>
+<i id="n3" style="background-color: rgb(252, 146, 114); background-position: initial initial; background-repeat: initial initial;"></i> <span id="t3">(100, 200]</span><br>
+<i id="n4" style="background-color: rgb(251, 106, 74); background-position: initial initial; background-repeat: initial initial;"></i> <span id="t4">(200, 350]</span><br>
+<i id="n5" style="background-color: rgb(239, 59, 44); background-position: initial initial; background-repeat: initial initial;"></i> <span id="t5">(350, 500]</span><br>
+<i id="n6" style="background-color: rgb(203, 24, 29); background-position: initial initial; background-repeat: initial initial;"></i> <span id="t6">(500, 700]</span><br>
+<i id="n7" style="background-color: rgb(165, 15, 21); background-position: initial initial; background-repeat: initial initial;"></i> <span id="t7">(700, 900]</span><br>
+<i id="n8" style="background-color: rgb(103, 0, 13); background-position: initial initial; background-repeat: initial initial;"></i> <span id="t8">(900,)</span></div>
+</head>
+<body>
+  <script>
+/*
+ * This product includes color specifications and designs developed by Cynthia
+ * Brewer (http://colorbrewer.org/).
+ */
+var colorbrewer = {
+
+Blues:{3:["rgb(222,235,247)","rgb(158,202,225)","rgb(49,130,189)"],4:["rgb(239,243,255)","rgb(189,215,231)","rgb(107,174,214)","rgb(33,113,181)"],5:["rgb(239,243,255)","rgb(189,215,231)","rgb(107,174,214)","rgb(49,130,189)","rgb(8,81,156)"],6:["rgb(239,243,255)","rgb(198,219,239)","rgb(158,202,225)","rgb(107,174,214)","rgb(49,130,189)","rgb(8,81,156)"],7:["rgb(239,243,255)","rgb(198,219,239)","rgb(158,202,225)","rgb(107,174,214)","rgb(66,146,198)","rgb(33,113,181)","rgb(8,69,148)"],8:["rgb(247,251,255)","rgb(222,235,247)","rgb(198,219,239)","rgb(158,202,225)","rgb(107,174,214)","rgb(66,146,198)","rgb(33,113,181)","rgb(8,69,148)"],9:["rgb(247,251,255)","rgb(222,235,247)","rgb(198,219,239)","rgb(158,202,225)","rgb(107,174,214)","rgb(66,146,198)","rgb(33,113,181)","rgb(8,81,156)","rgb(8,48,107)"]},
+YlOrBr:{3:["rgb(255,247,188)","rgb(254,196,79)","rgb(217,95,14)"],4:["rgb(255,255,212)","rgb(254,217,142)","rgb(254,153,41)","rgb(204,76,2)"],5:["rgb(255,255,212)","rgb(254,217,142)","rgb(254,153,41)","rgb(217,95,14)","rgb(153,52,4)"],6:["rgb(255,255,212)","rgb(254,227,145)","rgb(254,196,79)","rgb(254,153,41)","rgb(217,95,14)","rgb(153,52,4)"],7:["rgb(255,255,212)","rgb(254,227,145)","rgb(254,196,79)","rgb(254,153,41)","rgb(236,112,20)","rgb(204,76,2)","rgb(140,45,4)"],8:["rgb(255,255,229)","rgb(255,247,188)","rgb(254,227,145)","rgb(254,196,79)","rgb(254,153,41)","rgb(236,112,20)","rgb(204,76,2)","rgb(140,45,4)"],9:["rgb(255,255,229)","rgb(255,247,188)","rgb(254,227,145)","rgb(254,196,79)","rgb(254,153,41)","rgb(236,112,20)","rgb(204,76,2)","rgb(153,52,4)","rgb(102,37,6)"]},
+Reds:{3:["rgb(254,224,210)","rgb(252,146,114)","rgb(222,45,38)"],4:["rgb(254,229,217)","rgb(252,174,145)","rgb(251,106,74)","rgb(203,24,29)"],5:["rgb(254,229,217)","rgb(252,174,145)","rgb(251,106,74)","rgb(222,45,38)","rgb(165,15,21)"],6:["rgb(254,229,217)","rgb(252,187,161)","rgb(252,146,114)","rgb(251,106,74)","rgb(222,45,38)","rgb(165,15,21)"],7:["rgb(254,229,217)","rgb(252,187,161)","rgb(252,146,114)","rgb(251,106,74)","rgb(239,59,44)","rgb(203,24,29)","rgb(153,0,13)"],8:["rgb(255,245,240)","rgb(254,224,210)","rgb(252,187,161)","rgb(252,146,114)","rgb(251,106,74)","rgb(239,59,44)","rgb(203,24,29)","rgb(153,0,13)"],9:["rgb(255,245,240)","rgb(254,224,210)","rgb(252,187,161)","rgb(252,146,114)","rgb(251,106,74)","rgb(239,59,44)","rgb(203,24,29)","rgb(165,15,21)","rgb(103,0,13)"]},
+};
+</script>
+  <script type="text/javascript">
+var cutPoints = ["(0, 10]", "(10, 50]", "(50, 100]", 
+     "(100, 200]", 
+     "(200, 350]", "(350, 500]", 
+     "(500, 700]", "(700, 900]", "(900,)"];
+
+  </script>
+    <script>
+    var width = 1250;
+    var height = 580;
+
+    var svg = d3.select( "body" )
+        .append( "svg" )
+        .attr( "width", width )
+        .attr( "height", height );
+
+
+    var albersProjection = d3.geoAlbers()
+        .scale( 190000 )
+        .rotate( [93.265,0] )
+        .center( [0, 44.978] )
+        .translate( [width/2,height/2] );
+
+    var path = d3.geoPath()
+        .projection( albersProjection );
+
+    var feature, selection = "ROB";
+
+    function colorScale(){
+      if (selection == "ROB") 
+          return colorbrewer.Reds[9];
+      else if (selection == "VTH")
+          return colorbrewer.Reds[9];
+      else if (selection == "BUR")
+          return colorbrewer.Reds[9];
+    };
+
+    var color = d3.scaleThreshold()
+       .domain([20,50,100,200,350,500,700,900])
+       .range(colorScale());
+
+
+    d3.queue()
+        .defer(d3.json, "mpls3.json")
+        .defer(d3.tsv, "crimes2.tsv")
+        .await(ready);
+
+    var caption = d3.select('#caption')
+    , starter = caption.html();
+
+    var caption2 = d3.select('#caption2'), starter2 = caption2.html();
+
+    function ready(error, mpls, crime) {
+      if (error) throw error;
+
+      var rateById = {}; // Create empty object for holding dataset
+      crime.forEach(function(d) {
+        var count = selection
+        rateById[d.id] = +d.count; // Create property for each ID, give it value from rate
+        // important: cast rate to numeric value (+)
+      });
+      console.log(rateById);
+      
+      svg.append("g")
+          .attr("class", "counties")
+        .selectAll("path")
+          .data(topojson.feature(mpls, mpls.objects.neighborhoods).features)
+        .enter().append("path")
+          .attr("d", path)
+          .style("fill", function(d, i) {
+            return color(d.properties[selection]); // get rate value for specific object
+            // pass rate to color function, return color based on scale
+          })
+          .style("stroke", "black")
+          .on('mouseover', function(d, i) {
+      if (error) throw error;
+        barData = [d.properties.ROB, d.properties.VTH, d.properties.BUR];
+        redraw();
+        caption.html(["Neighborhood:", d.properties.title].join(" "));
+
+        caption2.html(["Neighborhood:", d.properties.title,       
+                      "ROB:", d.properties.ROB, 
+                      "|VTH:", d.properties.VTH, 
+                      "|BUR:", d.properties.BUR].join(" "));
+    })
+          .on('mousemove', function(d, i) {
+      if (error) throw error;
+        barData = [d.properties.ROB, d.properties.VTH, d.properties.BUR];
+        redraw();
+        caption.html(["Neighborhood:", d.properties.title].join(" "));
+        caption2.html([
+                      "ROB:", d.properties.ROB, 
+                      "| VTH:", d.properties.VTH, 
+                      "| BUR:", d.properties.BUR].join(" "));
+    })
+          .on('mouseout', function() {
+              caption.html(starter);
+              caption2.html(starter2);
+              barData = [0,0,0];
+              redraw();
+        });
+      ;
+    }
+    d3.select("select").on("change", function() {
+         selection = this.value.toString();
+         if(selection != "Cluster")
+             for(i=0;i<9;i++) {
+                 d3.select("#n" + i).style("background",colorScale()[i]); 
+                 d3.select("#t" + i).html(cutPoints[i]);   
+             }
+          d3.selectAll("path").style("fill",function(d, i) { 
+              return color(d.properties[selection]); });
+          // d3.queue()
+          // .defer(d3.json, "mpls3.json")
+          // .defer(d3.tsv, "crimes2.tsv")
+          // .await(ready);
+    });
+   
+    var barData = [0,0,0];
+    var gap = 2;
+    //padding for the party labels
+    var left_padding = 30;
+    var w = 220,
+        h = 72;
+      
+    var x = d3.scaleLinear()
+        .domain([0, 1000])
+        .range([0, w]);
+    var y = d3.scaleBand()
+        .domain(barData)
+        .rangeRound([0, h])
+        .padding(0.1);
+
+    var chart = d3.select(".chart").append("svg")
+        .attr("class", "chart")
+        .attr("width", w+left_padding+10)
+        .attr("height", h)
+        .append("g")
+        .attr("transform", "translate(20,15)");
+
+    //the lines at 20,40,60
+    chart.selectAll("line")
+        .data(x.ticks(4))
+        .enter().append("line")
+        .attr("x1", function(d) { return x(d) + left_padding; })
+        .attr("x2", function(d) { return x(d) + left_padding; })
+        .attr("y1", -3)
+        .attr("y2", 120)
+        .style("stroke", function(d, i) {return i == 0 ? "#000": "#bbb";});
+
+    //the text at the top of the lines
+    chart.selectAll(".rule")
+        .data(x.ticks(4))
+        .enter().append("text")
+         .attr("class", "rule")
+        .attr("x", function(d) { return x(d) + left_padding; })
+        .attr("y", 0)
+        .attr("dy", -4)
+        .attr("text-anchor", "middle")
+        .attr("font-size", 10)
+        .text(function(d){return d});
+
+    //the bars
+    chart.selectAll("rect")
+        .data(barData)
+        .enter().append("rect")
+        .attr("x", function(d, i) { return left_padding; })
+        .attr("y", function(d, i) { return i * 18; })
+        .attr("width", x)
+        .attr("height", 18)
+        .attr("fill",  function(d, i) { if(i == 1) return "#FFFF33";
+                                        if(i == 2) return "#377EB8";
+                                        else return "#E41A1C"; });
+
+    //labels for the parties
+    chart.selectAll("text.name")
+        .data(["ROB", "VTH", "BUR"])
+        .enter().append("text")
+        .attr("x", 0)
+        .attr("y", function(d, i){ return i * 20 + 10; } )
+        .attr("dy", ".36em")
+        .attr("text-anchor", "left")
+        .attr('class', 'name')
+        .attr("font-size", 12)
+        .attr("font-family","'Ubuntu',Tahoma,sans-serif")
+        .text(String);
+
+    function redraw() {
+        
+        // Update…
+        chart.selectAll("rect")
+            .data(barData)
+      .transition()
+            .duration(400)
+            .attr("y", function(d, i) { return i * 20; })
+      .attr("width", x);
+        
+     chart.selectAll("text")
+      .data(barData)
+      .enter().append("text")
+      .attr("stroke", "black")
+      .attr("x", x)
+      .attr("y", function(d) { return y(d) + y.rangeBand() / 2; })
+      .attr("dx", -3) // padding-right
+      .attr("dy", ".35em") // vertical-align: middle
+      .attr("text-anchor", "end") // text-align: right
+      .text(String);
+     }
+    </script>
+</body>
+</html>
