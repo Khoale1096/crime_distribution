@@ -75,7 +75,7 @@
   <p id="caption2"></p>
   <div class="chart"></div>
 <hr/>
-<p>Map Legend <!-- (<a href='http://blog.diegovalle.net/2013/02/mexican-presidential-election-by.html'>blog post</a>) -->:</p>
+<p>MAP LEGEND <!-- (<a href='http://blog.diegovalle.net/2013/02/mexican-presidential-election-by.html'>blog post</a>) -->:</p>
 <div class="legend">
 <i id="n0" style="background-color: rgb(255, 245, 240); background-position: initial initial; background-repeat: initial initial;"></i> <span id="t0">(0, 10]</span><br>
 <i id="n1" style="background-color: rgb(254, 224, 210); background-position: initial initial; background-repeat: initial initial;"></i> <span id="t1">(10, 50]</span><br>
@@ -177,10 +177,7 @@ var cutPoints = ["(0, 10]", "(10, 50]", "(50, 100]",
           .on('mouseover', handleMouseOver)
           .on('mousemove', handleMouseMove)
           .on('mouseout', handleMouseOut)
-          .on('click', drawLineGraph);
-        function drawLineGraph(d, i) {
-            
-        }
+
         function handleMouseOver(d, i) {
             if (error) throw error;
                 barData = [d.properties.ROB, d.properties.VTH, d.properties.BUR];
