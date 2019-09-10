@@ -132,9 +132,9 @@ var cutPoints = ["(0, 10]", "(10, 50]", "(50, 100]",
       if (selection == "ROB") 
           return colorbrewer.Reds[9];
       else if (selection == "VTH")
-          return colorbrewer.Reds[9];
+          return colorbrewer.YlOrBr[9];
       else if (selection == "BUR")
-          return colorbrewer.Reds[9];
+          return colorbrewer.Blues[9];
     };
 
     var color = d3.scaleThreshold()
@@ -174,34 +174,40 @@ var cutPoints = ["(0, 10]", "(10, 50]", "(50, 100]",
             // pass rate to color function, return color based on scale
           })
           .style("stroke", "black")
-          .on('mouseover', function(d, i) {
-      if (error) throw error;
-        barData = [d.properties.ROB, d.properties.VTH, d.properties.BUR];
-        redraw();
-        caption.html(["Neighborhood:", d.properties.title].join(" "));
+          .on('mouseover', handleMouseOver)
+          .on('mousemove', handleMouseMove)
+          .on('mouseout', handleMouseOut)
+          .on('click', drawLineGraph);
+        function drawLineGraph(d, i) {
+            
+        }
+        function handleMouseOver(d, i) {
+            if (error) throw error;
+                barData = [d.properties.ROB, d.properties.VTH, d.properties.BUR];
+                redraw();
+                caption.html(["Neighborhood:", d.properties.title].join(" "));
 
-        caption2.html(["Neighborhood:", d.properties.title,       
-                      "ROB:", d.properties.ROB, 
-                      "|VTH:", d.properties.VTH, 
-                      "|BUR:", d.properties.BUR].join(" "));
-    })
-          .on('mousemove', function(d, i) {
-      if (error) throw error;
-        barData = [d.properties.ROB, d.properties.VTH, d.properties.BUR];
-        redraw();
-        caption.html(["Neighborhood:", d.properties.title].join(" "));
-        caption2.html([
-                      "ROB:", d.properties.ROB, 
-                      "| VTH:", d.properties.VTH, 
-                      "| BUR:", d.properties.BUR].join(" "));
-    })
-          .on('mouseout', function() {
+                caption2.html(["Neighborhood:", d.properties.title,       
+                            "ROB:", d.properties.ROB, 
+                            "|VTH:", d.properties.VTH, 
+                            "|BUR:", d.properties.BUR].join(" "));
+        }   
+        function handleMouseMove(d, i) {
+            if (error) throw error;
+                barData = [d.properties.ROB, d.properties.VTH, d.properties.BUR];
+                redraw();
+                caption.html(["Neighborhood:", d.properties.title].join(" "));
+                caption2.html([
+                            "ROB:", d.properties.ROB, 
+                            "| VTH:", d.properties.VTH, 
+                            "| BUR:", d.properties.BUR].join(" "));
+        }
+        function handleMouseOut() {
               caption.html(starter);
               caption2.html(starter2);
               barData = [0,0,0];
               redraw();
-        });
-      ;
+        }
     }
     d3.select("select").on("change", function() {
          selection = this.value.toString();
@@ -211,11 +217,8 @@ var cutPoints = ["(0, 10]", "(10, 50]", "(50, 100]",
                  d3.select("#t" + i).html(cutPoints[i]);   
              }
           d3.selectAll("path").style("fill",function(d, i) { 
+            color.range(colorScale());
               return color(d.properties[selection]); });
-          // d3.queue()
-          // .defer(d3.json, "mpls3.json")
-          // .defer(d3.tsv, "crimes2.tsv")
-          // .await(ready);
     });
    
     var barData = [0,0,0];
